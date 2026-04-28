@@ -97,6 +97,35 @@ export class AeronaveController {
     res.status(201).json(serializarAeronave(aeronave));
   };
 
+  // PUT /api/aeronaves/:matricula  body: { modelo?, anioFabricacion?, aerolineaId? }
+  actualizar = (req: Request, res: Response): void => {
+    const matricula = param(req.params.matricula, "matricula");
+    const aeronave = this.repo.findByMatricula(matricula);
+    if (!aeronave) throw new NotFoundError("Aeronave", matricula);
+
+    const datos: { modelo?: string; anioFabricacion?: number } = {};
+    if (req.body?.modelo !== undefined)
+      datos.modelo = exigirString(req.body.modelo, "modelo", { minLen: 2, maxLen: 100 });
+    if (req.body?.anioFabricacion !== undefined)
+      datos.anioFabricacion = exigirEntero(req.body.anioFabricacion, "anioFabricacion", {
+        min: 1900, max: new Date().getFullYear() + 1,
+      });
+    this.repo.actualizar(aeronave.getId(), datos);
+
+    if (req.body?.aerolineaId !== undefined) {
+      const aerolineaId = req.body.aerolineaId === null
+        ? null
+        : exigirEntero(req.body.aerolineaId, "aerolineaId", { min: 1 });
+      if (aerolineaId !== null && !this.aerolineaRepo.findById(aerolineaId)) {
+        throw new ValidationError(`Aerolínea ${aerolineaId} no existe`);
+      }
+      this.repo.asignarAerolinea(aeronave.getId(), aerolineaId);
+    }
+
+    const actualizada = this.repo.findByMatricula(matricula)!;
+    res.json(serializarAeronave(actualizada));
+  };
+
   eliminar = (req: Request, res: Response): void => {
     const ok = this.repo.delete(param(req.params.matricula, "matricula"));
     if (!ok) throw new NotFoundError("Aeronave", param(req.params.matricula, "matricula"));

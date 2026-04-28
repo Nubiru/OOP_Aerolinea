@@ -166,9 +166,13 @@ CREATE TABLE IF NOT EXISTS vuelos (
   origen        TEXT NOT NULL,
   destino       TEXT NOT NULL,
   fecha_salida  TEXT NOT NULL,
+  estado        TEXT NOT NULL DEFAULT 'programado'
+                  CHECK (estado IN ('programado','embarcando','en_vuelo','aterrizado','cancelado')),
   aeronave_id   INTEGER NOT NULL REFERENCES aeronaves(id) ON DELETE RESTRICT,
   piloto_id     INTEGER NOT NULL REFERENCES personas(id) ON DELETE RESTRICT
 );
+
+CREATE INDEX IF NOT EXISTS idx_vuelos_estado ON vuelos(estado);
 
 -- ─────────────────────────────────────────────────────────────────────────
 -- VUELO_PASAJEROS (M:N agregación)

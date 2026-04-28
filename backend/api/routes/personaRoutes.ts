@@ -13,6 +13,10 @@ router.post("/mecanicos", c.crearMecanico);
 router.post("/jefes", c.crearJefe);
 router.post("/pasajeros", c.crearPasajero);
 
+router.put("/:id", c.actualizar);
+router.put("/:id/asignar-aeronave", c.asignarAeronave);
+router.put("/:id/jefe", c.asignarJefe);
+
 router.delete("/:id", c.eliminar);
 
 export default router;

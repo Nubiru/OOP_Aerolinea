@@ -3,6 +3,7 @@ import { Vuelo } from "../../domain/operaciones/Vuelo";
 import { Aeronave } from "../../domain/aeronaves/Aeronave";
 import { Piloto } from "../../domain/personas/Piloto";
 import { Pasajero } from "../../domain/personas/Pasajero";
+import { EstadoVuelo } from "../../domain/operaciones/EstadoVuelo";
 import { AeronaveRepository } from "./AeronaveRepository";
 import { PersonaRepository } from "./PersonaRepository";
 
@@ -12,6 +13,7 @@ interface FilaVuelo {
   origen: string;
   destino: string;
   fecha_salida: string;
+  estado: EstadoVuelo;
   aeronave_id: number;
   piloto_id: number;
 }
@@ -45,14 +47,15 @@ export class VueloRepository {
     const transaccion = this.db.transaction(() => {
       const result = this.db
         .prepare(`
-          INSERT INTO vuelos (numero, origen, destino, fecha_salida, aeronave_id, piloto_id)
-          VALUES (?, ?, ?, ?, ?, ?)
+          INSERT INTO vuelos (numero, origen, destino, fecha_salida, estado, aeronave_id, piloto_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
         `)
         .run(
           vuelo.getNumero(),
           vuelo.getOrigen(),
           vuelo.getDestino(),
           vuelo.getFechaSalida().toISOString().slice(0, 10),
+          vuelo.getEstado(),
           vuelo.getAeronave().getId(),
           vuelo.getPiloto().getId()
         );
@@ -66,6 +69,24 @@ export class VueloRepository {
     });
     transaccion();
     return vuelo;
+  }
+
+  // Persiste el cambio de estado. La validación de transición la hace
+  // la entidad de dominio antes de llamar acá.
+  actualizarEstado(vueloId: number, estado: EstadoVuelo): void {
+    this.db.prepare("UPDATE vuelos SET estado = ? WHERE id = ?").run(estado, vueloId);
+  }
+
+  // Edición de campos básicos (origen/destino/fecha)
+  actualizarBasico(vueloId: number, datos: { origen?: string; destino?: string; fechaSalida?: Date }): void {
+    const sets: string[] = [];
+    const params: unknown[] = [];
+    if (datos.origen !== undefined) { sets.push("origen = ?"); params.push(datos.origen); }
+    if (datos.destino !== undefined) { sets.push("destino = ?"); params.push(datos.destino); }
+    if (datos.fechaSalida !== undefined) { sets.push("fecha_salida = ?"); params.push(datos.fechaSalida.toISOString().slice(0, 10)); }
+    if (sets.length === 0) return;
+    params.push(vueloId);
+    this.db.prepare(`UPDATE vuelos SET ${sets.join(", ")} WHERE id = ?`).run(...params);
   }
 
   embarcar(vueloId: number, pasajeroId: number, asiento: string | null = null): void {
@@ -105,7 +126,8 @@ export class VueloRepository {
     const vuelo = new Vuelo(
       f.numero, f.origen, f.destino,
       new Date(f.fecha_salida),
-      aeronave, piloto
+      aeronave, piloto,
+      f.estado
     );
     vuelo.setId(f.id);
 

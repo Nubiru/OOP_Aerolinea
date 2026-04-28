@@ -128,6 +128,17 @@ export class AeronaveRepository {
     return r.changes > 0;
   }
 
+  actualizar(id: number, datos: { modelo?: string; anioFabricacion?: number }): boolean {
+    const sets: string[] = [];
+    const params: unknown[] = [];
+    if (datos.modelo !== undefined) { sets.push("modelo = ?"); params.push(datos.modelo); }
+    if (datos.anioFabricacion !== undefined) { sets.push("anio_fabricacion = ?"); params.push(datos.anioFabricacion); }
+    if (sets.length === 0) return false;
+    params.push(id);
+    const r = this.db.prepare(`UPDATE aeronaves SET ${sets.join(", ")} WHERE id = ?`).run(...params);
+    return r.changes > 0;
+  }
+
   delete(matricula: string): boolean {
     // ON DELETE CASCADE en subsistemas → componentes → piezas se encarga del resto
     const r = this.db.prepare("DELETE FROM aeronaves WHERE matricula = ?").run(matricula);

@@ -5,10 +5,11 @@ import { PersonaRepository } from "../../persistence/repositorios/PersonaReposit
 import { Vuelo } from "../../domain/operaciones/Vuelo";
 import { Piloto } from "../../domain/personas/Piloto";
 import { Pasajero } from "../../domain/personas/Pasajero";
+import { ESTADOS_VUELO } from "../../domain/operaciones/EstadoVuelo";
 import { serializarVuelo } from "../serializers/vueloSerializer";
 import { NotFoundError, ValidationError, ConflictError } from "../errors/HttpError";
 import {
-  exigirString, exigirEntero, exigirFecha, parsearIdParam, param,
+  exigirString, exigirEntero, exigirFecha, exigirEnum, parsearIdParam, param,
 } from "../validators/comunes";
 
 export class VueloController {
@@ -86,6 +87,43 @@ export class VueloController {
       throw new NotFoundError(`Embarque (vuelo ${vuelo.getNumero()}, pasajero)`, pasajeroId);
     }
     res.status(204).send();
+  };
+
+  // PUT /api/vuelos/:numero/estado  body: { estado }
+  cambiarEstado = (req: Request, res: Response): void => {
+    const numero = param(req.params.numero, "numero");
+    const vuelo = this.vueloRepo.findByNumero(numero);
+    if (!vuelo) throw new NotFoundError("Vuelo", numero);
+
+    const nuevoEstado = exigirEnum(req.body?.estado, "estado", ESTADOS_VUELO);
+
+    try {
+      vuelo.cambiarEstado(nuevoEstado);  // máquina de estados valida transición
+    } catch (e) {
+      throw new ValidationError((e as Error).message);
+    }
+    this.vueloRepo.actualizarEstado(vuelo.getId(), nuevoEstado);
+    const actualizado = this.vueloRepo.findByNumero(numero)!;
+    res.json(serializarVuelo(actualizado));
+  };
+
+  // PUT /api/vuelos/:numero  body: { origen?, destino?, fechaSalida? }
+  actualizar = (req: Request, res: Response): void => {
+    const numero = param(req.params.numero, "numero");
+    const vuelo = this.vueloRepo.findByNumero(numero);
+    if (!vuelo) throw new NotFoundError("Vuelo", numero);
+
+    const datos: { origen?: string; destino?: string; fechaSalida?: Date } = {};
+    if (req.body?.origen !== undefined)
+      datos.origen = exigirString(req.body.origen, "origen", { minLen: 3, maxLen: 5 });
+    if (req.body?.destino !== undefined)
+      datos.destino = exigirString(req.body.destino, "destino", { minLen: 3, maxLen: 5 });
+    if (req.body?.fechaSalida !== undefined)
+      datos.fechaSalida = exigirFecha(req.body.fechaSalida, "fechaSalida");
+
+    this.vueloRepo.actualizarBasico(vuelo.getId(), datos);
+    const actualizado = this.vueloRepo.findByNumero(numero)!;
+    res.json(serializarVuelo(actualizado));
   };
 
   eliminar = (req: Request, res: Response): void => {

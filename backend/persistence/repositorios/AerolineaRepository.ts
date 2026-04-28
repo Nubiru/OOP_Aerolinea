@@ -72,6 +72,20 @@ export class AerolineaRepository {
     return aerolinea;
   }
 
+  actualizar(id: number, datos: { nombre?: string; fechaFundacion?: Date }): boolean {
+    const sets: string[] = [];
+    const params: unknown[] = [];
+    if (datos.nombre !== undefined) { sets.push("nombre = ?"); params.push(datos.nombre); }
+    if (datos.fechaFundacion !== undefined) {
+      sets.push("fecha_fundacion = ?");
+      params.push(datos.fechaFundacion.toISOString().slice(0, 10));
+    }
+    if (sets.length === 0) return false;
+    params.push(id);
+    const r = this.db.prepare(`UPDATE aerolineas SET ${sets.join(", ")} WHERE id = ?`).run(...params);
+    return r.changes > 0;
+  }
+
   delete(id: number): boolean {
     const r = this.db.prepare("DELETE FROM aerolineas WHERE id = ?").run(id);
     return r.changes > 0;

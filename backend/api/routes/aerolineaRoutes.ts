@@ -8,6 +8,7 @@ router.get("/", c.listar);
 router.get("/:id", c.obtener);
 router.get("/:id/miembros", c.obtenerConMiembros);
 router.post("/", c.crear);
+router.put("/:id", c.actualizar);
 router.delete("/:id", c.eliminar);
 
 export default router;

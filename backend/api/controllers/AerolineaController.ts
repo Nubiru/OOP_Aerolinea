@@ -40,6 +40,22 @@ export class AerolineaController {
     res.status(201).json(serializarAerolinea(aerolinea));
   };
 
+  actualizar = (req: Request, res: Response): void => {
+    const id = parsearIdParam(req.params.id);
+    const aerolinea = this.repo.findById(id);
+    if (!aerolinea) throw new NotFoundError("Aerolínea", id);
+
+    const datos: { nombre?: string; fechaFundacion?: Date } = {};
+    if (req.body?.nombre !== undefined)
+      datos.nombre = exigirString(req.body.nombre, "nombre", { minLen: 2, maxLen: 100 });
+    if (req.body?.fechaFundacion !== undefined)
+      datos.fechaFundacion = exigirFecha(req.body.fechaFundacion, "fechaFundacion");
+
+    this.repo.actualizar(id, datos);
+    const actualizada = this.repo.findById(id)!;
+    res.json(serializarAerolinea(actualizada));
+  };
+
   eliminar = (req: Request, res: Response): void => {
     const id = parsearIdParam(req.params.id);
     const ok = this.repo.delete(id);

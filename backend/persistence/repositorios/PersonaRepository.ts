@@ -154,6 +154,29 @@ export class PersonaRepository {
     this.db.prepare("UPDATE personas SET jefe_id = ? WHERE id = ?").run(jefeId, empleadoId);
   }
 
+  // Actualiza campos editables de una persona según su tipo
+  actualizar(id: number, datos: {
+    nombre?: string;
+    salario?: number;
+    horasVuelo?: number;
+    especialidad?: string;
+    departamento?: string;
+    clase?: "economica" | "ejecutiva" | "primera";
+  }): boolean {
+    const sets: string[] = [];
+    const params: unknown[] = [];
+    if (datos.nombre !== undefined) { sets.push("nombre = ?"); params.push(datos.nombre); }
+    if (datos.salario !== undefined) { sets.push("salario = ?"); params.push(datos.salario); }
+    if (datos.horasVuelo !== undefined) { sets.push("horas_vuelo = ?"); params.push(datos.horasVuelo); }
+    if (datos.especialidad !== undefined) { sets.push("especialidad = ?"); params.push(datos.especialidad); }
+    if (datos.departamento !== undefined) { sets.push("departamento = ?"); params.push(datos.departamento); }
+    if (datos.clase !== undefined) { sets.push("clase = ?"); params.push(datos.clase); }
+    if (sets.length === 0) return false;
+    params.push(id);
+    const r = this.db.prepare(`UPDATE personas SET ${sets.join(", ")} WHERE id = ?`).run(...params);
+    return r.changes > 0;
+  }
+
   // Asignar piloto a una aeronave (asociación)
   asignarAeronave(pilotoId: number, aeronaveId: number | null): void {
     this.db.prepare("UPDATE personas SET aeronave_asignada_id = ? WHERE id = ?")
