@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRUD Usuarios - OOP</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f0f2f5;
+      color: #333;
+      padding: 2rem;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: #1a1a2e;
+    }
+
+    .container {
+      max-width: 750px;
+      margin: 0 auto;
+    }
+
+    .form-card, .table-card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+    }
+
+    .form-card h2, .table-card h2 {
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+      color: #16213e;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .form-group {
+      flex: 1;
+      min-width: 120px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .form-group label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #555;
+      text-transform: uppercase;
+    }
+
+    .form-group input {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #4361ee;
+      box-shadow: 0 0 0 2px rgba(67,97,238,0.15);
+    }
+
+    .form-group input.error {
+      border-color: #e63946;
+    }
+
+    .error-text {
+      color: #e63946;
+      font-size: 0.75rem;
+      min-height: 1rem;
+    }
+
+    .btn {
+      padding: 0.5rem 1.2rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+
+    .btn-primary { background: #4361ee; color: #fff; }
+    .btn-primary:hover { background: #3a56d4; }
+    .btn-cancel { background: #adb5bd; color: #fff; }
+    .btn-cancel:hover { background: #868e96; }
+    .btn-edit { background: #f0ad4e; color: #fff; padding: 0.3rem 0.7rem; font-size: 0.8rem; }
+    .btn-edit:hover { background: #ec971f; }
+    .btn-delete { background: #e63946; color: #fff; padding: 0.3rem 0.7rem; font-size: 0.8rem; }
+    .btn-delete:hover { background: #c1121f; }
+
+    .form-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    th {
+      background: #f8f9fa;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: #666;
+    }
+
+    tr:hover td { background: #f8f9fa; }
+
+    .empty-msg {
+      text-align: center;
+      padding: 2rem;
+      color: #999;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 6px;
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.9rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 100;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.success { background: #2d6a4f; }
+    .toast.error { background: #e63946; }
+
+    .search-bar {
+      margin-bottom: 1rem;
+    }
+
+    .search-bar input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+
+    .search-bar input:focus {
+      outline: none;
+      border-color: #4361ee;
+    }
+
+    .badge {
+      background: #e9ecef;
+      color: #555;
+      padding: 0.15rem 0.5rem;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      margin-left: 0.5rem;
+    }
+
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    .confirm-box {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+    }
+
+    .confirm-box p {
+      margin-bottom: 1.25rem;
+      font-size: 1rem;
+    }
+
+    .confirm-box .btn { margin: 0 0.25rem; }
+  </style>
+</head>
+<body>
+
+<div class="container" id="app"></div>
+<div id="toast-container"></div>
+
+<script>
+// ============================================================
+// Clase ApiService - Encapsula todas las llamadas HTTP al backend
+// ============================================================
+class ApiService {
+  constructor(baseUrl) {
+    this.baseUrl = baseUrl;
+  }
+
+  async getAll() {
+    const res = await fetch(this.baseUrl);
+    if (!res.ok) throw new Error("Error al obtener usuarios");
+    return res.json();
+  }
+
+  async getById(id) {
+    const res = await fetch(this.baseUrl + "/" + id);
+    if (!res.ok) throw new Error("Usuario no encontrado");
+    return res.json();
+  }
+
+  async create(data) {
+    const res = await fetch(this.baseUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Error al crear usuario");
+    return res.json();
+  }
+
+  async update(id, data) {
+    const res = await fetch(this.baseUrl + "/" + id, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error("Error al actualizar usuario");
+    return res.json();
+  }
+
+  async delete(id) {
+    const res = await fetch(this.baseUrl + "/" + id, { method: "DELETE" });
+    if (!res.ok) throw new Error("Error al eliminar usuario");
+  }
+}
+
+// ============================================================
+// Clase Toast - Notificaciones visuales
+// ============================================================
+class Toast {
+  constructor(containerId) {
+    this.container = document.getElementById(containerId);
+  }
+
+  show(message, type = "success") {
+    const el = document.createElement("div");
+    el.className = "toast " + type;
+    el.textContent = message;
+    this.container.appendChild(el);
+
+    requestAnimationFrame(() => el.classList.add("visible"));
+
+    setTimeout(() => {
+      el.classList.remove("visible");
+      setTimeout(() => el.remove(), 300);
+    }, 2500);
+  }
+}
+
+// ============================================================
+// Clase ConfirmDialog - Modal de confirmacion
+// ============================================================
+class ConfirmDialog {
+  show(message) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement("div");
+      overlay.className = "confirm-overlay";
+
+      const box = document.createElement("div");
+      box.className = "confirm-box";
+
+      const text = document.createElement("p");
+      text.textContent = message;
+
+      const btnYes = document.createElement("button");
+      btnYes.className = "btn btn-delete";
+      btnYes.textContent = "Eliminar";
+
+      const btnNo = document.createElement("button");
+      btnNo.className = "btn btn-cancel";
+      btnNo.textContent = "Cancelar";
+
+      const close = (result) => {
+        overlay.remove();
+        resolve(result);
+      };
+
+      btnYes.addEventListener("click", () => close(true));
+      btnNo.addEventListener("click", () => close(false));
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) close(false);
+      });
+
+      box.appendChild(text);
+      box.appendChild(btnYes);
+      box.appendChild(btnNo);
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+    });
+  }
+}
+
+// ============================================================
+// Clase UsuarioForm - Formulario de creacion/edicion
+// ============================================================
+class UsuarioForm {
+  constructor(onSubmit) {
+    this.onSubmit = onSubmit;
+    this.editingId = null;
+    this.el = this.render();
+  }
+
+  render() {
+    const card = document.createElement("div");
+    card.className = "form-card";
+
+    this.title = document.createElement("h2");
+    this.title.textContent = "Crear Usuario";
+
+    const row = document.createElement("div");
+    row.className = "form-row";
+
+    this.inputs = {
+      nombre: this.createField("Nombre", "text", "Ej: Juan"),
+      email: this.createField("Email", "email", "Ej: juan@mail.com"),
+      edad: this.createField("Edad", "number", "Ej: 25"),
+    };
+
+    for (const key in this.inputs) {
+      row.appendChild(this.inputs[key].group);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "form-actions";
+
+    this.btnSubmit = document.createElement("button");
+    this.btnSubmit.className = "btn btn-primary";
+    this.btnSubmit.textContent = "Guardar";
+    this.btnSubmit.addEventListener("click", () => this.handleSubmit());
+
+    this.btnCancel = document.createElement("button");
+    this.btnCancel.className = "btn btn-cancel";
+    this.btnCancel.textContent = "Cancelar";
+    this.btnCancel.style.display = "none";
+    this.btnCancel.addEventListener("click", () => this.reset());
+
+    actions.appendChild(this.btnSubmit);
+    actions.appendChild(this.btnCancel);
+
+    card.appendChild(this.title);
+    card.appendChild(row);
+    card.appendChild(actions);
+    return card;
+  }
+
+  createField(label, type, placeholder) {
+    const group = document.createElement("div");
+    group.className = "form-group";
+
+    const lbl = document.createElement("label");
+    lbl.textContent = label;
+
+    const input = document.createElement("input");
+    input.type = type;
+    input.placeholder = placeholder;
+    if (type === "number") input.min = "1";
+
+    const errorText = document.createElement("span");
+    errorText.className = "error-text";
+
+    group.appendChild(lbl);
+    group.appendChild(input);
+    group.appendChild(errorText);
+
+    return { group, input, errorText };
+  }
+
+  validate() {
+    let valid = true;
+
+    const nombre = this.inputs.nombre.input.value.trim();
+    const email = this.inputs.email.input.value.trim();
+    const edad = this.inputs.edad.input.value;
+
+    this.clearErrors();
+
+    if (!nombre) {
+      this.setError("nombre", "Requerido");
+      valid = false;
+    }
+
+    if (!email) {
+      this.setError("email", "Requerido");
+      valid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.setError("email", "Email invalido");
+      valid = false;
+    }
+
+    if (!edad || parseInt(edad) < 1) {
+      this.setError("edad", "Debe ser mayor a 0");
+      valid = false;
+    }
+
+    return valid;
+  }
+
+  setError(field, message) {
+    this.inputs[field].input.classList.add("error");
+    this.inputs[field].errorText.textContent = message;
+  }
+
+  clearErrors() {
+    for (const key in this.inputs) {
+      this.inputs[key].input.classList.remove("error");
+      this.inputs[key].errorText.textContent = "";
+    }
+  }
+
+  getData() {
+    return {
+      nombre: this.inputs.nombre.input.value.trim(),
+      email: this.inputs.email.input.value.trim(),
+      edad: parseInt(this.inputs.edad.input.value),
+    };
+  }
+
+  handleSubmit() {
+    if (!this.validate()) return;
+    this.onSubmit(this.editingId, this.getData());
+  }
+
+  loadForEdit(usuario) {
+    this.editingId = usuario.id;
+    this.inputs.nombre.input.value = usuario.nombre;
+    this.inputs.email.input.value = usuario.email;
+    this.inputs.edad.input.value = usuario.edad;
+    this.title.textContent = "Editar Usuario #" + usuario.id;
+    this.btnCancel.style.display = "inline-block";
+    this.clearErrors();
+    this.inputs.nombre.input.focus();
+  }
+
+  reset() {
+    this.editingId = null;
+    for (const key in this.inputs) {
+      this.inputs[key].input.value = "";
+    }
+    this.title.textContent = "Crear Usuario";
+    this.btnCancel.style.display = "none";
+    this.clearErrors();
+  }
+}
+
+// ============================================================
+// Clase UsuarioTable - Tabla con busqueda y acciones
+// ============================================================
+class UsuarioTable {
+  constructor(onEdit, onDelete) {
+    this.onEdit = onEdit;
+    this.onDelete = onDelete;
+    this.usuarios = [];
+    this.filterText = "";
+    this.el = this.render();
+  }
+
+  render() {
+    const card = document.createElement("div");
+    card.className = "table-card";
+
+    const headerRow = document.createElement("div");
+    headerRow.style.display = "flex";
+    headerRow.style.alignItems = "center";
+
+    this.titleEl = document.createElement("h2");
+    this.titleEl.textContent = "Lista de Usuarios";
+
+    this.badge = document.createElement("span");
+    this.badge.className = "badge";
+    this.badge.textContent = "0";
+
+    this.titleEl.appendChild(this.badge);
+
+    const searchBar = document.createElement("div");
+    searchBar.className = "search-bar";
+
+    this.searchInput = document.createElement("input");
+    this.searchInput.type = "text";
+    this.searchInput.placeholder = "Buscar por nombre o email...";
+    this.searchInput.addEventListener("input", () => {
+      this.filterText = this.searchInput.value.toLowerCase();
+      this.renderRows();
+    });
+
+    searchBar.appendChild(this.searchInput);
+
+    const table = document.createElement("table");
+
+    const thead = document.createElement("thead");
+    thead.innerHTML = "<tr><th>ID</th><th>Nombre</th><th>Email</th><th>Edad</th><th>Acciones</th></tr>";
+
+    this.tbody = document.createElement("tbody");
+    this.emptyMsg = document.createElement("p");
+    this.emptyMsg.className = "empty-msg";
+    this.emptyMsg.textContent = "No hay usuarios registrados.";
+
+    table.appendChild(thead);
+    table.appendChild(this.tbody);
+
+    card.appendChild(this.titleEl);
+    card.appendChild(searchBar);
+    card.appendChild(table);
+    card.appendChild(this.emptyMsg);
+    return card;
+  }
+
+  setData(usuarios) {
+    this.usuarios = usuarios;
+    this.badge.textContent = usuarios.length;
+    this.renderRows();
+  }
+
+  renderRows() {
+    this.tbody.innerHTML = "";
+
+    const filtered = this.usuarios.filter((u) => {
+      if (!this.filterText) return true;
+      return u.nombre.toLowerCase().includes(this.filterText)
+        || u.email.toLowerCase().includes(this.filterText);
+    });
+
+    this.emptyMsg.style.display = filtered.length === 0 ? "block" : "none";
+
+    filtered.forEach((u) => {
+      const tr = document.createElement("tr");
+
+      const tdId = document.createElement("td");
+      tdId.textContent = u.id;
+
+      const tdNombre = document.createElement("td");
+      tdNombre.textContent = u.nombre;
+
+      const tdEmail = document.createElement("td");
+      tdEmail.textContent = u.email;
+
+      const tdEdad = document.createElement("td");
+      tdEdad.textContent = u.edad;
+
+      const tdActions = document.createElement("td");
+
+      const btnEdit = document.createElement("button");
+      btnEdit.className = "btn btn-edit";
+      btnEdit.textContent = "Editar";
+      btnEdit.addEventListener("click", () => this.onEdit(u));
+
+      const btnDelete = document.createElement("button");
+      btnDelete.className = "btn btn-delete";
+      btnDelete.textContent = "Eliminar";
+      btnDelete.addEventListener("click", () => this.onDelete(u.id));
+
+      tdActions.appendChild(btnEdit);
+      tdActions.appendChild(document.createTextNode(" "));
+      tdActions.appendChild(btnDelete);
+
+      tr.appendChild(tdId);
+      tr.appendChild(tdNombre);
+      tr.appendChild(tdEmail);
+      tr.appendChild(tdEdad);
+      tr.appendChild(tdActions);
+
+      this.tbody.appendChild(tr);
+    });
+  }
+}
+
+// ============================================================
+// Clase App - Orquesta todos los componentes
+// ============================================================
+class App {
+  constructor(rootId) {
+    const apiBase = window.location.port === "5173"
+      ? "http://localhost:3000/api/usuarios"
+      : window.location.origin + "/api/usuarios";
+
+    this.api = new ApiService(apiBase);
+    this.toast = new Toast("toast-container");
+    this.confirm = new ConfirmDialog();
+
+    this.form = new UsuarioForm((id, data) => this.handleSubmit(id, data));
+    this.table = new UsuarioTable(
+      (usuario) => this.form.loadForEdit(usuario),
+      (id) => this.handleDelete(id)
+    );
+
+    const root = document.getElementById(rootId);
+    const title = document.createElement("h1");
+    title.textContent = "Gestion de Usuarios (OOP)";
+
+    root.appendChild(title);
+    root.appendChild(this.form.el);
+    root.appendChild(this.table.el);
+
+    this.loadUsuarios();
+  }
+
+  async loadUsuarios() {
+    try {
+      const usuarios = await this.api.getAll();
+      this.table.setData(usuarios);
+    } catch (err) {
+      this.toast.show(err.message, "error");
+    }
+  }
+
+  async handleSubmit(id, data) {
+    try {
+      if (id) {
+        await this.api.update(id, data);
+        this.toast.show("Usuario actualizado");
+      } else {
+        await this.api.create(data);
+        this.toast.show("Usuario creado");
+      }
+      this.form.reset();
+      this.loadUsuarios();
+    } catch (err) {
+      this.toast.show(err.message, "error");
+    }
+  }
+
+  async handleDelete(id) {
+    const confirmed = await this.confirm.show("¿Eliminar este usuario?");
+    if (!confirmed) return;
+
+    try {
+      await this.api.delete(id);
+      this.toast.show("Usuario eliminado");
+      this.loadUsuarios();
+    } catch (err) {
+      this.toast.show(err.message, "error");
+    }
+  }
+}
+
+// ============================================================
+// Punto de entrada
+// ============================================================
+const app = new App("app");
+</script>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+node_modules/
+dist/
+*.log
+
+# SQLite database files (generados en runtime)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
