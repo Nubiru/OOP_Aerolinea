@@ -1,3 +1,37 @@
-node_modules
-dist
-.claude
+# Build artifacts (se generan dentro del contenedor)
+node_modules/
+dist/
+
+# DB files (gitignored, no van a la imagen)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Git / GitHub
+.git/
+.github/
+.gitignore
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Docker (no nos auto-incluimos)
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Logs / env
+*.log
+.env
+.env.local
+
+# Vercel
+.vercel/
+vercel.json
+
+# Otros
+.claude/
+README.md

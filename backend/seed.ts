@@ -16,16 +16,7 @@
 //     aterrizado, cancelado)
 // ============================================================================
 
-import * as fs from "fs";
-import * as path from "path";
 import { DatabaseConnection } from "./persistence/DatabaseConnection";
-
-// Borra los archivos de DB previos para garantizar esquema limpio (la DB
-// preexistente puede tener columnas viejas).
-const dbPath = path.join(__dirname, "../data/aerolinea.db");
-for (const f of [dbPath, `${dbPath}-shm`, `${dbPath}-wal`]) {
-  if (fs.existsSync(f)) fs.unlinkSync(f);
-}
 import { AerolineaRepository } from "./persistence/repositorios/AerolineaRepository";
 import { AeronaveRepository } from "./persistence/repositorios/AeronaveRepository";
 import { PersonaRepository } from "./persistence/repositorios/PersonaRepository";

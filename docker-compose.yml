@@ -1,0 +1,37 @@
+# =============================================================================
+# docker-compose para OOP Aerolínea
+#
+# Comandos:
+#   docker compose up --build          → levanta el sistema (frontend + API)
+#   docker compose exec api node dist/seed.js   → poblar DB con datos demo
+#   docker compose exec api node dist/verify.js → round-trip DB→dominio
+#   docker compose down                → detiene servicios (preserva volumen)
+#   docker compose down -v             → detiene Y borra el volumen de DB
+# =============================================================================
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: oop-aerolinea:latest
+    container_name: oop-aerolinea-api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    volumes:
+      # Volumen nombrado: SQLite persiste entre restarts
+      - aerolinea_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+
+volumes:
+  aerolinea_data:
+    name: oop_aerolinea_data
