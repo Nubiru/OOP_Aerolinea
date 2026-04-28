@@ -1,0 +1,41 @@
+# =============================================================================
+# render.yaml — Blueprint de Render para el backend de OOP_Aerolinea
+#
+# Render lee este archivo si está en la raíz del repo y permite crear el
+# servicio con un click ("Deploy to Render"). Hay dos perfiles (uno comentado):
+#
+#   1) Free tier (sin disco persistente)
+#      AUTO_SEED=true → la DB se siembra al boot si está vacía. Los datos
+#      se pierden con cada cold-start o redeploy. OK para demo.
+#
+#   2) Starter $7/mo + disco $1/mo (1 GB)
+#      AUTO_SEED=false → DB persistente en /app/data. Comentado abajo.
+#
+# Ambos usan el mismo Dockerfile multi-stage.
+# =============================================================================
+services:
+  - type: web
+    name: oop-aerolinea-api
+    runtime: docker
+    plan: free                  # cambiar a "starter" para usar disco persistente
+    branch: main
+    region: oregon              # ajustar a tu zona si querés (oregon|frankfurt|singapore)
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # ── Free tier: siembra la DB en cada arranque si no existe ───────────
+      - key: AUTO_SEED
+        value: "true"
+      # ── Starter + disco: descomentá lo siguiente y cambiá plan a "starter"
+      # - key: AUTO_SEED
+      #   value: "false"
+      # disk:
+      #   name: aerolinea-data
+      #   mountPath: /app/data
+      #   sizeGB: 1

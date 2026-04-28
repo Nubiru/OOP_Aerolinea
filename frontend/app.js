@@ -329,7 +329,7 @@ class FlotaView {
     card.appendChild(el("div", { class: "card-stats" }, [
       this.statBox(a.cantidadSubsistemas, "Subsistemas"),
       this.statBox(a.cantidadPiezasTotales, "Piezas totales"),
-      this.statBox(`${a.pesoTotalKg} kg`, "Peso"),
+      this.statBox(`${a.pesoTotalKg} kg`, "Piezas inventariadas (peso)"),
     ]));
 
     card.appendChild(el("div", { class: "card-actions" }, [
@@ -1083,7 +1083,7 @@ class DiagnosticoView {
         ]),
         el("div", { class: "stat" }, [
           el("span", { class: "stat-value" }, `${d.pesoTotalKg} kg`),
-          el("span", { class: "stat-label" }, "Peso"),
+          el("span", { class: "stat-label" }, "Piezas inventariadas (peso)"),
         ]),
       ]));
 

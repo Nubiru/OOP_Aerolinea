@@ -52,8 +52,10 @@ RUN apt-get update \
 # Artefactos del build
 COPY --from=build --chown=app:app /app/node_modules ./node_modules
 COPY --from=build --chown=app:app /app/dist          ./dist
-COPY --chown=app:app package.json   ./
-COPY --chown=app:app frontend       ./frontend
+COPY --chown=app:app package.json     ./
+COPY --chown=app:app frontend         ./frontend
+COPY --chown=app:app scripts/start.sh ./start.sh
+RUN chmod +x ./start.sh
 
 # Carpeta para SQLite (montada como volumen)
 RUN mkdir -p /app/data && chown -R app:app /app/data
@@ -70,4 +72,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -fsS http://localhost:3000/api/health || exit 1
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["node", "dist/index.js"]
+CMD ["./start.sh"]

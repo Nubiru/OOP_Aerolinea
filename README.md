@@ -120,12 +120,19 @@ Abrir `http://localhost:5173`.
 
 ---
 
-## Docker
+## Docker / Podman
+
+El mismo `docker-compose.yml` funciona con ambos runtimes. Elegí el que tengas instalado.
 
 ### Levantar todo con un solo comando
 
 ```bash
+# Con Docker
 docker compose up --build
+
+# Con Podman
+podman compose up --build
+# (alternativa antigua: podman-compose up --build)
 ```
 
 La API queda en `http://localhost:3000`. Está incluido el frontend estático servido por el mismo proceso.
@@ -133,17 +140,29 @@ La API queda en `http://localhost:3000`. Está incluido el frontend estático se
 ### Poblar la DB dentro del contenedor
 
 ```bash
+# Docker
 docker compose exec api node dist/seed.js
 docker compose exec api node dist/verify.js
+
+# Podman
+podman compose exec api node dist/seed.js
+podman compose exec api node dist/verify.js
 ```
+
+> **Tip alternativo**: setear `AUTO_SEED=true` en el environment hace que el seed corra automáticamente al boot si la DB no existe (útil en hosts sin disco persistente, ver sección Render).
 
 ### Persistencia
 
 El volumen nombrado `oop_aerolinea_data` preserva la base entre restarts. Para reiniciar de cero:
 
 ```bash
+# Docker
 docker compose down -v       # borra el volumen
 docker compose up --build    # vuelve a empezar
+
+# Podman
+podman compose down -v
+podman compose up --build
 ```
 
 ### Detalles del Dockerfile
@@ -152,6 +171,7 @@ docker compose up --build    # vuelve a empezar
 - **Non-root**: corre como usuario `app:app`.
 - **`tini` como PID 1**: signals y reaping correctos.
 - **HEALTHCHECK** contra `/api/health` cada 30s.
+- **Entrypoint inteligente** (`scripts/start.sh`): si `AUTO_SEED=true` y no hay DB, siembra antes de arrancar el servidor.
 
 ---
 
@@ -227,46 +247,125 @@ Base URL: `http://localhost:3000/api`
 
 ## Deployment
 
+### Arquitectura recomendada
+
+```
+┌─────────────────────┐         ┌──────────────────────┐
+│  Frontend (Vercel)  │  ────►  │  Backend (Render)    │
+│  oop-aerolinea      │  /api/* │  oop-aerolinea-api   │
+│  .vercel.app        │ rewrite │  .onrender.com       │
+└─────────────────────┘         └──────────────────────┘
+                                          │
+                                          ▼
+                                    SQLite (volumen)
+```
+
+> **Importante**: el backend usa `better-sqlite3` (módulo nativo + filesystem persistente), por eso **no funciona en Vercel serverless**. Vercel se usa solo para el frontend; el backend corre en Render (o Fly/Railway/VPS) como contenedor Docker.
+
+### Backend → Render (paso a paso)
+
+El repo incluye `render.yaml` (Blueprint) que automatiza la creación del servicio.
+
+#### Opción A: Free tier (sin disco persistente)
+
+Para una demo que se levanta on-demand. La DB se siembra automáticamente al boot si está vacía (`AUTO_SEED=true`).
+
+> ⚠️ **Limitación**: el free tier de Render no tiene disco persistente y el container se duerme tras 15 min de inactividad. Cada vez que despierta (cold start ~30s) la DB se reinicia con datos demo. Para una demo controlada esto está bien — si insertás datos por la API se pierden al próximo restart.
+
+**Pasos:**
+
+1. **Push del repo** a GitHub (con `render.yaml` ya en la raíz).
+2. Entrar a [dashboard.render.com](https://dashboard.render.com) → **New +** → **Blueprint**.
+3. Conectar el repo `Nubiru/OOP_Aerolinea`. Render lee `render.yaml` y propone crear el servicio.
+4. Click **Apply**. El primer build tarda ~5-7 min (compila el módulo nativo de SQLite).
+5. Cuando termina, te da una URL tipo `https://oop-aerolinea-api.onrender.com`.
+
+**Verificar que arrancó:**
+```bash
+curl https://oop-aerolinea-api.onrender.com/api/health
+# {"status":"ok","servicio":"OOP_Aerolinea API"}
+
+curl https://oop-aerolinea-api.onrender.com/api/aeronaves | jq length
+# 6  (sembradas automáticamente al boot)
+```
+
+#### Opción B: Starter $7/mo + disco persistente $1/mo
+
+Para mantener datos entre restarts. Editar `render.yaml`:
+
+```yaml
+plan: starter            # cambia de "free" a "starter"
+envVars:
+  - key: AUTO_SEED
+    value: "false"       # NO sembrar al boot
+disk:
+  name: aerolinea-data
+  mountPath: /app/data
+  sizeGB: 1
+```
+
+Después del primer deploy, sembrar manualmente desde el shell de Render (UI: tu servicio → Shell):
+```bash
+node dist/seed.js
+```
+
+#### Resumen de la config en Render
+
+| Setting | Valor |
+|---|---|
+| Service Type | Web Service |
+| Runtime | Docker |
+| Dockerfile path | `./Dockerfile` |
+| Docker Context | `.` |
+| Health Check Path | `/api/health` |
+| Branch | `main` |
+| Auto-Deploy | enabled |
+| Env: `NODE_ENV` | `production` |
+| Env: `PORT` | `3000` |
+| Env: `AUTO_SEED` | `true` (free) o `false` (con disco) |
+
 ### Frontend → Vercel
 
-El frontend es estático y deploya en Vercel directo desde el repo:
+El frontend es estático y deploya en Vercel desde el repo. **`vercel.json` está dentro de `frontend/`**, así que tenés que configurar el **Root Directory = `frontend`** en el proyecto de Vercel.
 
-```bash
-npm i -g vercel
-vercel login
-vercel --prod
-```
+#### Pasos
 
-`vercel.json` tiene `outputDirectory: "frontend"` y un **rewrite** de `/api/*` → `BACKEND_URL`. **Antes de pushear**, editá esa URL para apuntar a tu backend desplegado:
+1. **Editar `frontend/vercel.json`** y reemplazar `CHANGE-ME-BACKEND-URL.example.com` por la URL de Render obtenida arriba:
 
-```json
-{
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://oop-aerolinea-api.tu-dominio.com/api/:path*"
-    }
-  ]
-}
-```
+   ```json
+   {
+     "rewrites": [
+       {
+         "source": "/api/:path*",
+         "destination": "https://oop-aerolinea-api.onrender.com/api/:path*"
+       }
+     ]
+   }
+   ```
 
-> Importante: el backend usa `better-sqlite3` (módulo nativo + filesystem persistente), por eso **no funciona en Vercel serverless**. Vercel se usa solo para el frontend.
+2. **Push** ese cambio a `main`.
 
-### Backend → Docker en cualquier proveedor
+3. En [vercel.com/new](https://vercel.com/new) → **Import** del repo.
 
-La imagen Docker funciona tal cual en:
+4. **Configure Project**:
+   - **Root Directory**: `frontend` ← importante
+   - Framework Preset: **Other**
+   - Build Command: (vacío)
+   - Output Directory: (vacío, usa la raíz del root directory)
+
+5. **Deploy**. Te da una URL tipo `https://oop-aerolinea.vercel.app`.
+
+Cómo funciona el proxy: el frontend hace `fetch('/api/aeronaves')`. Vercel intercepta, aplica el rewrite, y reenvía a `https://oop-aerolinea-api.onrender.com/api/aeronaves`. CORS no es problema porque para el browser todo viene del mismo origen.
+
+#### Otros proveedores válidos para el backend
+
+La imagen Docker corre tal cual en:
 
 | Proveedor | Notas |
 |---|---|
-| **Fly.io** | `fly launch` detecta el Dockerfile. Volume persistente nativo. |
-| **Render** | "New Web Service" → "Docker" → apuntar al repo. Free tier con disk. |
-| **Railway** | Detecta Dockerfile. Persistencia con `RAILWAY_VOLUME_MOUNT_PATH`. |
-| **VPS propio** | `docker compose up -d` y listo. |
-
-En cualquiera, después del primer deploy ejecutar el seed:
-```bash
-<comando-exec-del-proveedor> node dist/seed.js
-```
+| **Fly.io** | `fly launch` detecta el Dockerfile. Volume persistente nativo en free tier (3 GB). |
+| **Railway** | Detecta Dockerfile. Persistencia con `RAILWAY_VOLUME_MOUNT_PATH=/app/data`. |
+| **VPS propio** | `docker compose up -d` o `podman compose up -d`. |
 
 ---
 
@@ -301,12 +400,15 @@ oop/
 ├── frontend/
 │   ├── index.html            SPA con 6 tabs
 │   ├── styles.css            sistema de diseño
-│   └── app.js                clases JS paralelas al backend OOP
+│   ├── app.js                clases JS paralelas al backend OOP
+│   └── vercel.json           rewrites /api/* → backend de Render
+├── scripts/
+│   └── start.sh              entrypoint con auto-seed condicional
 ├── data/                     SQLite (gitignored)
 ├── .github/workflows/ci.yml  pipeline CI
 ├── Dockerfile                multi-stage production-grade
-├── docker-compose.yml        orquestación local
-├── vercel.json               config de deploy del frontend
+├── docker-compose.yml        orquestación local (compatible con podman compose)
+├── render.yaml               Blueprint de Render (free + paid options)
 ├── package.json
 ├── tsconfig.json
 └── README.md
