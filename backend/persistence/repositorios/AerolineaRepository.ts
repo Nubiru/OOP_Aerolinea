@@ -23,6 +23,27 @@ export class AerolineaRepository {
     return filas.map(f => this.hidratar(f));
   }
 
+  // Igual que getAll pero pre-carga listas vacías con el count correcto
+  // poblado vía agregaciones SQL (evita N+1 al listar).
+  getAllConContadores(): Array<{ aerolinea: Aerolinea; cantAeronaves: number; cantEmpleados: number }> {
+    const filas = this.db
+      .prepare(`
+        SELECT
+          a.*,
+          (SELECT COUNT(*) FROM aeronaves WHERE aerolinea_id = a.id) AS cant_aeronaves,
+          (SELECT COUNT(*) FROM personas
+              WHERE aerolinea_id = a.id AND tipo IN ('piloto','mecanico','jefe')) AS cant_empleados
+        FROM aerolineas a
+        ORDER BY a.nombre
+      `)
+      .all() as Array<FilaAerolinea & { cant_aeronaves: number; cant_empleados: number }>;
+    return filas.map(f => ({
+      aerolinea: this.hidratar(f),
+      cantAeronaves: f.cant_aeronaves,
+      cantEmpleados: f.cant_empleados,
+    }));
+  }
+
   findById(id: number): Aerolinea | null {
     const fila = this.db
       .prepare("SELECT * FROM aerolineas WHERE id = ?")

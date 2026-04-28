@@ -31,6 +31,41 @@ export class AeronaveRepository {
     return filas.map(f => this.hidratar(f));
   }
 
+  // Listado con contadores agregados via SQL (evita cargar el árbol completo)
+  getAllConContadores(): Array<{
+    aeronave: Aeronave;
+    cantSubsistemas: number;
+    cantPiezas: number;
+    pesoG: number;
+  }> {
+    const filas = this.db.prepare(`
+      SELECT
+        a.*,
+        (SELECT COUNT(*) FROM subsistemas WHERE aeronave_id = a.id) AS cant_subsistemas,
+        (SELECT COUNT(*) FROM piezas p
+            JOIN componentes c ON c.id = p.componente_id
+            JOIN subsistemas s ON s.id = c.subsistema_id
+            WHERE s.aeronave_id = a.id) AS cant_piezas,
+        (SELECT COALESCE(SUM(p.peso_g), 0) FROM piezas p
+            JOIN componentes c ON c.id = p.componente_id
+            JOIN subsistemas s ON s.id = c.subsistema_id
+            WHERE s.aeronave_id = a.id) AS peso_g
+      FROM aeronaves a
+      ORDER BY a.matricula
+    `).all() as Array<FilaAeronave & {
+      cant_subsistemas: number;
+      cant_piezas: number;
+      peso_g: number;
+    }>;
+
+    return filas.map(f => ({
+      aeronave: this.hidratar(f),
+      cantSubsistemas: f.cant_subsistemas,
+      cantPiezas: f.cant_piezas,
+      pesoG: f.peso_g,
+    }));
+  }
+
   findByMatricula(matricula: string): Aeronave | null {
     const fila = this.db
       .prepare("SELECT * FROM aeronaves WHERE matricula = ?")
