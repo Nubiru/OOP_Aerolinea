@@ -13,8 +13,10 @@ export abstract class Persona {
   }
 
   getId(): number { return this.id; }
+  setId(id: number): void { this.id = id; }
   getNombre(): string { return this.nombre; }
   getDni(): string { return this.dni; }
+  getFechaNacimiento(): Date { return this.fechaNacimiento; }
 
   getEdad(): number {
     const hoy = new Date();

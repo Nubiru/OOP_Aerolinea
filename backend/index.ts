@@ -1,16 +1,19 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
-import usuarioRoutes from "./routes/usuarioRoutes";
+import { DatabaseConnection } from "./persistence/DatabaseConnection";
 
+// Servidor Express. Por ahora sin rutas API (Fase 3 las agrega).
+// Su responsabilidad inmediata: inicializar la base SQLite (singleton)
+// y servir el frontend estático.
 class App {
   private app = express();
   private port: number;
 
   constructor(port?: number) {
     this.port = port ?? (process.env.PORT ? parseInt(process.env.PORT) : 3000);
+    DatabaseConnection.getInstance();   // crea/abre aerolinea.db
     this.middlewares();
-    this.routes();
     this.staticFiles();
   }
 
@@ -19,17 +22,13 @@ class App {
     this.app.use(express.json());
   }
 
-  private routes(): void {
-    this.app.use("/api/usuarios", usuarioRoutes);
-  }
-
   private staticFiles(): void {
     this.app.use(express.static(path.join(__dirname, "../frontend")));
   }
 
   start(): void {
     this.app.listen(this.port, () => {
-      console.log(`Servidor corriendo en http://localhost:${this.port}`);
+      console.log(`Servidor OOP_Aerolinea corriendo en http://localhost:${this.port}`);
     });
   }
 }

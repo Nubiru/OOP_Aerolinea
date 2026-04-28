@@ -6,16 +6,19 @@ import { Pieza } from "../piezas/Pieza";
 // COMPOSICIÓN: un Subsistema compone Componentes. Cada subsistema agrupa los
 // componentes que cumplen una función (propulsión, aterrizaje, etc.).
 export abstract class Subsistema {
-  protected id: string;
+  protected id: number = 0;       // PK numérico (0 = no persistido)
+  protected codigo: string;        // clave natural (ej. "SUB-PROP")
   protected nombre: string;
   protected componentes: Componente[] = [];
 
-  constructor(id: string, nombre: string) {
-    this.id = id;
+  constructor(codigo: string, nombre: string) {
+    this.codigo = codigo;
     this.nombre = nombre;
   }
 
-  getId(): string { return this.id; }
+  getId(): number { return this.id; }
+  setId(id: number): void { this.id = id; }
+  getCodigo(): string { return this.codigo; }
   getNombre(): string { return this.nombre; }
   getComponentes(): Componente[] { return [...this.componentes]; }
 

@@ -12,7 +12,8 @@ import { Pieza } from "../piezas/Pieza";
 // recorre su árbol completo (subsistemas → componentes → piezas) para
 // generar reportes de mantenimiento.
 export abstract class Aeronave {
-  protected matricula: string;
+  protected id: number = 0;       // PK numérico (0 = no persistida)
+  protected matricula: string;    // clave natural (ej. "LV-AERO")
   protected modelo: string;
   protected anioFabricacion: number;
   protected subsistemas: Subsistema[] = [];
@@ -23,6 +24,8 @@ export abstract class Aeronave {
     this.anioFabricacion = anioFabricacion;
   }
 
+  getId(): number { return this.id; }
+  setId(id: number): void { this.id = id; }
   getMatricula(): string { return this.matricula; }
   getModelo(): string { return this.modelo; }
   getAnio(): number { return this.anioFabricacion; }

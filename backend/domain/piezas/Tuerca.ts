@@ -13,6 +13,9 @@ export class Tuerca extends Pieza {
     this.tipoRosca = tipoRosca;
   }
 
+  getMedida(): number { return this.medidaMm; }
+  getTipoRosca(): "metrica" | "imperial" { return this.tipoRosca; }
+
   obtenerTipo(): string { return "Tuerca"; }
 
   describir(): string {

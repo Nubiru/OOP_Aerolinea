@@ -16,6 +16,10 @@ export class Tornillo extends Pieza {
     this.tipoCabeza = tipoCabeza;
   }
 
+  getLongitud(): number { return this.longitudMm; }
+  getDiametro(): number { return this.diametroMm; }
+  getTipoCabeza(): "hexagonal" | "phillips" | "torx" | "allen" { return this.tipoCabeza; }
+
   obtenerTipo(): string { return "Tornillo"; }
 
   describir(): string {

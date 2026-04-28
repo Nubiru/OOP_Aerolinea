@@ -16,6 +16,7 @@ export class Aerolinea {
   }
 
   getId(): number { return this.id; }
+  setId(id: number): void { this.id = id; }
   getNombre(): string { return this.nombre; }
   getFlota(): Aeronave[] { return [...this.flota]; }
   getEmpleados(): Empleado[] { return [...this.empleados]; }

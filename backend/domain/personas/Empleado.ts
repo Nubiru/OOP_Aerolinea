@@ -24,6 +24,7 @@ export abstract class Empleado extends Persona {
 
   getLegajo(): string { return this.legajo; }
   getSalario(): number { return this.salario; }
+  getFechaIngreso(): Date { return this.fechaIngreso; }
 
   abstract obtenerCargo(): string;
 

@@ -13,6 +13,9 @@ export class Resorte extends Pieza {
     this.longitudReposoMm = longitudReposoMm;
   }
 
+  getConstanteElastica(): number { return this.constanteElastica; }
+  getLongitudReposo(): number { return this.longitudReposoMm; }
+
   obtenerTipo(): string { return "Resorte"; }
 
   describir(): string {

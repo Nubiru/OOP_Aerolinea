@@ -9,6 +9,7 @@ import { Pasajero } from "../personas/Pasajero";
 // AGREGACIÓN: el Vuelo agrega Pasajeros. Los pasajeros existen antes de
 // embarcar y siguen existiendo al desembarcar.
 export class Vuelo {
+  private id: number = 0;
   private numero: string;
   private origen: string;
   private destino: string;
@@ -29,6 +30,8 @@ export class Vuelo {
     this.piloto = piloto;
   }
 
+  getId(): number { return this.id; }
+  setId(id: number): void { this.id = id; }
   getNumero(): string { return this.numero; }
   getOrigen(): string { return this.origen; }
   getDestino(): string { return this.destino; }

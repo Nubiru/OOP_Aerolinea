@@ -4,11 +4,14 @@ export class Helice extends Motor {
   private numPalas: number;
   private diametroM: number;
 
-  constructor(id: string, nombre: string, potenciaCV: number, numPalas: number, diametroM: number) {
-    super(id, nombre, potenciaCV);
+  constructor(codigo: string, nombre: string, potenciaCV: number, numPalas: number, diametroM: number) {
+    super(codigo, nombre, potenciaCV);
     this.numPalas = numPalas;
     this.diametroM = diametroM;
   }
+
+  getNumPalas(): number { return this.numPalas; }
+  getDiametro(): number { return this.diametroM; }
 
   obtenerTipo(): string { return "Hélice"; }
 

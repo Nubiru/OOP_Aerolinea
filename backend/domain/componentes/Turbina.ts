@@ -3,10 +3,12 @@ import { Motor } from "./Motor";
 export class Turbina extends Motor {
   private empujeKn: number;
 
-  constructor(id: string, nombre: string, potenciaCV: number, empujeKn: number) {
-    super(id, nombre, potenciaCV);
+  constructor(codigo: string, nombre: string, potenciaCV: number, empujeKn: number) {
+    super(codigo, nombre, potenciaCV);
     this.empujeKn = empujeKn;
   }
+
+  getEmpuje(): number { return this.empujeKn; }
 
   obtenerTipo(): string { return "Turbina"; }
 

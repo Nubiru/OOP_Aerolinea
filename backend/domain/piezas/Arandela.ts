@@ -13,6 +13,9 @@ export class Arandela extends Pieza {
     this.diametroExternoMm = diametroExternoMm;
   }
 
+  getDiametroInterno(): number { return this.diametroInternoMm; }
+  getDiametroExterno(): number { return this.diametroExternoMm; }
+
   obtenerTipo(): string { return "Arandela"; }
 
   describir(): string {

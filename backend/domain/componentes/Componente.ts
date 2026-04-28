@@ -7,16 +7,19 @@ import { Pieza } from "../piezas/Pieza";
 // sus piezas se van con él (a inventario de chatarra). Las piezas no tienen
 // sentido como "miembro suelto" del componente fuera de su contexto.
 export abstract class Componente {
-  protected id: string;
+  protected id: number = 0;       // PK numérico de DB (0 = no persistido)
+  protected codigo: string;        // clave natural (ej. "TUR-CFM56-A")
   protected nombre: string;
   protected piezas: Pieza[] = [];
 
-  constructor(id: string, nombre: string) {
-    this.id = id;
+  constructor(codigo: string, nombre: string) {
+    this.codigo = codigo;
     this.nombre = nombre;
   }
 
-  getId(): string { return this.id; }
+  getId(): number { return this.id; }
+  setId(id: number): void { this.id = id; }
+  getCodigo(): string { return this.codigo; }
   getNombre(): string { return this.nombre; }
   getPiezas(): Pieza[] { return [...this.piezas]; }
 

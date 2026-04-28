@@ -5,8 +5,8 @@ import { Componente } from "./Componente";
 export abstract class Motor extends Componente {
   protected potenciaCV: number;
 
-  constructor(id: string, nombre: string, potenciaCV: number) {
-    super(id, nombre);
+  constructor(codigo: string, nombre: string, potenciaCV: number) {
+    super(codigo, nombre);
     this.potenciaCV = potenciaCV;
   }
 
