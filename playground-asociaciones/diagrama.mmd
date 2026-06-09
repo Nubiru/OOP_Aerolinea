@@ -1,0 +1,124 @@
+classDiagram
+    direction TB
+
+    %% ════════════════════════════════════════════
+    %% HERENCIA: SistemaPropulsion → Helice, Turbina
+    %% ════════════════════════════════════════════
+
+    class SistemaPropulsion {
+        <<abstract>>
+        #tipo: string
+        +ToString()* string
+    }
+
+    class Helice {
+        -numHelices: number
+        +ToString() string
+    }
+
+    class Turbina {
+        -numTurbinas: number
+        +ToString() string
+    }
+
+    SistemaPropulsion <|-- Helice : herencia
+    SistemaPropulsion <|-- Turbina : herencia
+
+    %% ════════════════════════════════════════════
+    %% COMPOSICIÓN: Partes del avión
+    %% ════════════════════════════════════════════
+
+    class TrendeAterrizaje {
+        -numNeumaticos: number
+        -numAmortiguadores: number
+        -fijoRetractil: boolean
+        +ToString() string
+    }
+
+    class Cubierta {
+        -cabinaTripulacion: boolean
+        -cabinaVuelo: boolean
+        -sistemaEmergencia: boolean
+        -numTanquesCombustible: number
+        -numPuertasSalidas: number
+        +ToString() string
+    }
+
+    class Alas {
+        -numAlasFrente: number
+        -numAlasCola: number
+        +ToString() string
+    }
+
+    %% ════════════════════════════════════════════
+    %% HERENCIA: Aeronave → Aeroplano, AvionReactor
+    %% COMPOSICIÓN: Aeronave compone sus partes
+    %% AGREGACIÓN: Aeronave agrega Pasajeros
+    %% ════════════════════════════════════════════
+
+    class Aeronave {
+        <<abstract>>
+        #propulsion: SistemaPropulsion
+        #trenAterrizaje: TrendeAterrizaje
+        #alas: Alas
+        #cubierta: Cubierta
+        #pasajeros: Pasajero[]
+        +embarcarPasajero(Pasajero) void
+        +desembarcarPasajeros() Pasajero[]
+        +ToString()* string
+    }
+
+    class Aeroplano {
+        +ToString() string
+    }
+
+    class AvionReactor {
+        +ToString() string
+    }
+
+    Aeronave <|-- Aeroplano : herencia
+    Aeronave <|-- AvionReactor : herencia
+
+    %% COMPOSICIÓN (rombo negro): las partes mueren con la aeronave
+    Aeronave *-- SistemaPropulsion : composición
+    Aeronave *-- TrendeAterrizaje : composición
+    Aeronave *-- Alas : composición
+    Aeronave *-- Cubierta : composición
+
+    %% ════════════════════════════════════════════
+    %% AGREGACIÓN: Pasajero existe independientemente
+    %% ════════════════════════════════════════════
+
+    class Pasajero {
+        -nombre: string
+        -asiento: string
+        +ToString() string
+    }
+
+    Aeronave o-- Pasajero : agregación
+
+    %% ════════════════════════════════════════════
+    %% ASOCIACIÓN SIMPLE: Piloto ↔ Aeronave
+    %% ════════════════════════════════════════════
+
+    class Piloto {
+        -nombre: string
+        -licencia: string
+        -aeronaveAsignada: Aeronave
+        +asignarAeronave(Aeronave) void
+        +ToString() string
+    }
+
+    Piloto --> Aeronave : asociación
+
+    %% ════════════════════════════════════════════
+    %% DEPENDENCIA: TorreDeControl usa Aeronave temporalmente
+    %% ════════════════════════════════════════════
+
+    class TorreDeControl {
+        -nombre: string
+        +autorizarDespegue(Aeronave) string
+        +autorizarAterrizaje(Aeronave) string
+    }
+
+    TorreDeControl ..> Aeronave : dependencia

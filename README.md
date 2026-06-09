@@ -41,6 +41,11 @@ programado ──┬─→ embarcando ──┬─→ en_vuelo ──→ aterriz
              └────────────────┴─→ cancelado (terminal)
 ```
 
+> **Modelo base / playground:** la carpeta [`playground-asociaciones/`](playground-asociaciones/)
+> contiene el modelo standalone del aeroplano (actividad del 14/04/2026) que demuestra de
+> forma aislada las 5 relaciones OOP en un solo archivo. Fue la base conceptual de este
+> sistema completo.
+
 ---
 
 ## Arquitectura
